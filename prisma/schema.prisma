@@ -1,0 +1,95 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String       @id @default(uuid())
+  githubId     String       @unique
+  username     String       @unique
+  email        String?
+  avatarUrl    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  repositories Repository[]
+}
+
+model Repository {
+  id        String   @id @default(uuid())
+  owner     String
+  name      String
+  fullName  String   @unique // e.g. "owner/repo"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  files     File[]
+
+  @@index([owner, name])
+}
+
+model File {
+  id           String         @id @default(uuid())
+  repositoryId String
+  repository   Repository     @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  path         String // e.g. "README.md" o "docs/index.md"
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  stats        Stats?
+  dailyStats   DailyStats[]
+  monthlyStats MonthlyStats[]
+  visitLogs    VisitLog[]
+
+  @@unique([repositoryId, path])
+}
+
+model Stats {
+  id          String   @id @default(uuid())
+  fileId      String   @unique
+  file        File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  totalViews  Int      @default(0)
+  uniqueViews Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+model DailyStats {
+  id          String   @id @default(uuid())
+  fileId      String
+  file        File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  date        DateTime // Solo fecha (YYYY-MM-DD)
+  views       Int      @default(0)
+  uniqueViews Int      @default(0)
+
+  @@unique([fileId, date])
+  @@index([date])
+}
+
+model MonthlyStats {
+  id          String   @id @default(uuid())
+  fileId      String
+  file        File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  year        Int
+  month       Int
+  views       Int      @default(0)
+  uniqueViews Int      @default(0)
+
+  @@unique([fileId, year, month])
+}
+
+model VisitLog {
+  id        String   @id @default(uuid())
+  fileId    String
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  timestamp DateTime @default(now())
+  ipHash    String // Hash SHA-256 de la IP (privacidad)
+  userAgent String
+  referer   String?
+  country   String? // Código de país opcional (GeoIP)
+
+  @@index([fileId, timestamp])
+  @@index([ipHash])
+}
