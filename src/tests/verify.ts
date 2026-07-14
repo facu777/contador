@@ -18,10 +18,10 @@ async function request(path: string, headers: Record<string, string> = {}): Prom
         method: 'GET',
         headers,
       },
-      (res) => {
+      (res: http.IncomingMessage) => {
         let body = '';
         res.setEncoding('utf8');
-        res.on('data', (chunk) => {
+        res.on('data', (chunk: string) => {
           body += chunk;
         });
         res.on('end', () => {
@@ -34,7 +34,7 @@ async function request(path: string, headers: Record<string, string> = {}): Prom
       }
     );
 
-    req.on('error', (err) => {
+    req.on('error', (err: Error) => {
       reject(err);
     });
 

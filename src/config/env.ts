@@ -16,14 +16,19 @@ const envSchema = z.object({
   CACHE_TTL_SECONDS: z.coerce.number().default(86400), // 24 horas por defecto
 });
 
-// Validar variables de entorno
-const parsedEnv = envSchema.safeParse(process.env);
-
-if (!parsedEnv.success) {
+// Validar variables de entorno de forma estricta
+let parsedEnv: Env;
+try {
+  parsedEnv = envSchema.parse(process.env);
+} catch (error: any) {
   console.error('❌ Error de configuración en las variables de entorno:');
-  console.error(JSON.stringify(parsedEnv.error.format(), null, 2));
+  if (error.format) {
+    console.error(JSON.stringify(error.format(), null, 2));
+  } else {
+    console.error(error);
+  }
   process.exit(1);
 }
 
-export const env = parsedEnv.data;
+export const env = parsedEnv;
 export type Env = z.infer<typeof envSchema>;

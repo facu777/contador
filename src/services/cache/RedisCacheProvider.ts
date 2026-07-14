@@ -1,15 +1,15 @@
-import { createClient, RedisClientType } from 'redis';
+import { createClient } from 'redis';
 import { ICacheProvider } from './ICacheProvider.js';
 import logger from '../../utils/logger.js';
 
 export class RedisCacheProvider implements ICacheProvider {
-  private client: RedisClientType;
+  private client: ReturnType<typeof createClient>;
   private isConnected = false;
 
   constructor(url: string) {
     this.client = createClient({ url });
 
-    this.client.on('error', (err) => {
+    this.client.on('error', (err: any) => {
       logger.error('❌ Error de conexión en Redis client:', err);
     });
 
